@@ -48,7 +48,7 @@ YOLO is used to detect objects.
 The height threshold for classifying individuals as children or adults is dynamically adjusted based on the average height of detected persons in each frame.
 
 **Saving the Results:**
-The processed video, with tracking and classification, is saved to a file (tracking_results.mp4).
+The processed video, with tracking and classification, is saved to a file (results/tracking_results.mp4).
 
 **Exiting:**
 The script releases all resources and closes any windows displaying the video once processing is complete or if the user interrupts by pressing 'q'.
