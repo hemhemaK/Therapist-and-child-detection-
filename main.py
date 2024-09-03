@@ -67,8 +67,8 @@ def initialize_kalman_filter():
     return kf
 
 
-# Create Tracking folder if it doesn't exist
-results_folder = 'Tracking'
+# Create results folder if it doesn't exist
+results_folder = 'results'
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 
