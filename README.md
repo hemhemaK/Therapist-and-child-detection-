@@ -1,57 +1,81 @@
-# Therapist-and-child-detection
-The code provided is a Python script designed to detect and track people in a video using the YOLOv8 model and Kalman filters. The objective is to classify individuals as either 'Children' or 'Adults (Therapists)' based on their height, and to track their movement across the video frames, even handling scenarios where individuals are temporarily occluded (i.e., disappear and reappear).
+# Person Detection and Tracking System for Autism Spectrum Disorder (ASD) Analysis
 
-**Key Components and Concepts**
-**YOLOv8 Model:**
-The YOLO (You Only Look Once) model is used for object detection. In this script, YOLOv8 is specifically loaded to detect objects in each frame of the video. The model identifies bounding boxes around detected objects, such as people.
+## Project Overview
+This project presents a sophisticated system designed to detect and track individuals, particularly children with Autism Spectrum Disorder (ASD) and therapists, within video footage. The system assigns unique identifiers to each detected person, ensuring accurate tracking of their movements throughout the video. The solution effectively manages scenarios involving re-entries and occlusions, enabling continuous monitoring.
 
-**Video Input:**
-The script processes a video file (test.mp4). It reads the video frame by frame using OpenCV, which is a library for computer vision tasks.
+## Objective
+The primary objective of this project is to analyze interactions between children with ASD and therapists by tracking their movements over extended video sessions. The collected tracking data can be utilized to study behavioral patterns, emotional responses, and levels of engagement, which are critical for the development of effective therapeutic strategies.
 
-**Kalman Filter:**
-The Kalman filter is a mathematical model used for tracking and predicting the location of moving objects. It's particularly useful in situations where there might be noise or uncertainty in the object's movement. The script initializes a Kalman filter for each detected person, updating their predicted location in every frame.
+## System Features
+- Person Detection: Utilizes the YOLOv5 model for accurate real-time detection of individuals within video frames.
+- Unique ID Assignment: Assigns and maintains unique identifiers for each detected person across video frames.
+- Re-entry Management: Handles cases where individuals leave and subsequently re-enter the frame, ensuring continuity in tracking.
+- Post-Occlusion Tracking: Re-tracks individuals following partial or complete occlusion, maintaining the integrity of the unique identifiers.
+- Focused Tracking: Filters and tracks only relevant individuals (children and therapists), excluding non-relevant objects.
 
-**Object Tracking and Unique IDs:**
-Each detected person is assigned a unique ID for tracking. The script maintains a mapping between object IDs and their bounding boxes across frames. This ensures that the same person is tracked throughout the video, even when they move or are temporarily occluded.
+## Technical Breakdown
 
-**Classification Based on Height:**
-The script classifies individuals as either 'Children' or 'Adults (Therapists)' based on their height (the vertical dimension of the bounding box). An initial height threshold of 150 pixels is used, but this threshold is dynamically adjusted based on the average height of detected individuals.
+### Model Deployment
+The project employs the YOLOv5 model from Ultralytics, pre-trained on the COCO dataset, which is proficient in detecting 80 classes of objects, including "person." The model is seamlessly integrated using the PyTorch `hub.load` function, which facilitates the easy deployment of pre-trained models.
 
-**Handling Occlusion:**
-The script accounts for situations where an individual might be temporarily out of view (occlusion). If an object is lost (i.e., no longer detected), it is tracked for a certain number of frames (occlusion_timeout), and if it reappears within this period, it is re-associated with its original ID. If not, the object is removed from tracking.
+### Video Processing
+The video input is captured using OpenCV’s `cv2.VideoCapture`, enabling frame-by-frame analysis necessary for real-time detection and tracking.
 
-**Detailed Code Walkthrough**
+### Detection and Filtering
+For each frame, the YOLOv5 model outputs bounding boxes, confidence scores, and class labels. Only the detections classified as "person" (class ID 0) are retained. An optional size-based filtering mechanism is included to distinguish between children and therapists, based on the area of the bounding box.
 
-**Initialization:**
-The YOLO model is loaded using model = YOLO('yolov8s.pt').
-The video file is loaded with cap = cv2.VideoCapture(video_path).
-Variables are initialized to keep track of object IDs, bounding boxes, and Kalman filters.
+### Tracking with SORT Algorithm
+Filtered detections are passed to the SORT (Simple Online and Realtime Tracking) algorithm, which assigns and maintains unique IDs for each person across video frames. SORT utilizes a combination of Kalman Filters and the Hungarian algorithm to predict and update object trajectories, ensuring consistency in ID assignment even during re-entries or occlusions.
 
-**Main Processing Loop:**
-The script enters a loop that processes each frame of the video.
-For each frame:
-YOLO is used to detect objects.
--The script filters detections to only include persons (cls == 0).
--The height of each bounding box is measured, and based on this, the person is classified as either a 'Child' or 'Adult (Therapist)'.
--The script then tries to match these detections with previously tracked objects using Intersection over Union (IoU), a metric that compares the overlap between two bounding boxes.
--If a match is found, the existing ID is reused; otherwise, a new ID is assigned.
+### Handling Re-entries and Occlusions
+- Re-entries: SORT reassigns the same ID to individuals re-entering the frame if their predicted trajectory is consistent with previous movements.
+- Occlusions: During occlusions, SORT predicts and tracks the individual’s movement until they are visible again, preserving the correct ID.
 
-**Tracking with Kalman Filters:**
--For each tracked object, the Kalman filter is used to predict the next position of the person. The Kalman filter is then updated with the actual detection from YOLO.
--The bounding box is drawn around the detected person in the frame, with different colors representing children (green) and adults (red).
+### Overlaying and Saving Results
+Bounding boxes and unique IDs are overlaid onto each frame using OpenCV’s `cv2.rectangle` and `cv2.putText`. The processed frames are compiled and saved as an output video, which can be reviewed to analyze interactions between children and therapists.
 
-**Handling Lost Objects:**
--If an object is not detected in a particular frame, it is marked as "lost" but continues to be tracked for a few frames (occlusion_timeout).
--If the object reappears within this time frame, it is re-associated with its original ID; otherwise, it is removed from tracking.
+## Methodology
 
-**Dynamic Threshold Adjustment:**
-The height threshold for classifying individuals as children or adults is dynamically adjusted based on the average height of detected persons in each frame.
+### Model Selection
+YOLOv5, a state-of-the-art object detection model, is employed for detecting individuals in each frame. The model is pre-trained on the COCO dataset and is known for its efficiency and accuracy.
 
-**Saving the Results:**
-The processed video, with tracking and classification, is saved to a file (results/tracking_results.mp4).
+### Tracking Algorithm
+The SORT algorithm assigns unique IDs to detected persons and maintains these IDs across the video frames, ensuring consistent and accurate tracking.
 
-**Exiting:**
-The script releases all resources and closes any windows displaying the video once processing is complete or if the user interrupts by pressing 'q'.
+### Filtering Mechanism
+Detection results are filtered to focus exclusively on "persons" (children and therapists), ignoring other objects. An optional size threshold is available for differentiating between children and therapists based on bounding box dimensions.
 
-**Purpose and Use Case**
-This script is useful for scenarios where there is a need to monitor and track individuals in a video, such as in a therapy session, classroom, or any environment where it's important to differentiate between children and adults. The tracking ensures that each individual is consistently followed throughout the video, and the system can handle temporary occlusions, which are common in real-world situations.
+## Installation and Requirements
+### Prerequisites
+The project requires the following software and libraries:
+- Python 3.8+
+- PyTorch
+- OpenCV
+- SORT (Simple Online and Realtime Tracking)
+- NumPy
+
+### Installation Steps
+1. Clone the Repository
+   ```bash
+   git clone https://github.com/hemhemaK/Therapist-and-child-detection-/tree/main
+   cd Computer_Vision_Therapist_and_Child_Detection_and_Tracking
+   ```
+2. Install Dependencies:
+   ```bash
+   conda install -c conda-forge opencv
+   pip install torch torchvision sort numpy
+   ```
+
+## Usage Instructions
+1. Video Placement: Place your input video in the project directory or specify its path in the script.
+2. Run the Script: Execute the following command:
+   ```bash
+   python person_tracker.py
+   ```
+3. Output: The script processes the video and saves the output with detected persons and their unique IDs at the specified output path.
+
+## Customization Options
+- Threshold Adjustment: Modify the size threshold or detection logic in `person_tracker.py` to better distinguish between children and therapists.
+- Model Fine-Tuning: Fine-tune the detection model on a custom dataset to improve accuracy for specific scenarios.
+
+
